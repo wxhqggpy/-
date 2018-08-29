@@ -1,0 +1,90 @@
+# -*- coding:utf-8 -*-
+
+import tkinter
+import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,NavigationToolbar2TkAgg
+
+#生成能谱图
+def energy_spec(addr):
+    #读取文件，并把Energy取出做成一个list
+    file = pd.read_csv(addr, skiprows=[0,1])
+    energy = list(file['Energy'])
+    e = list(map(lambda x:x/128, energy))
+
+    fig = plt.figure(figsize=(16, 12))
+ 
+    num_bins = 1024
+    n, bins, patches = plt.hist(e, num_bins, range=(0, num_bins), facecolor='green', alpha=30)
+
+    return fig
+
+#生成PSA普谱图
+def PSA_spec(addr, scal):
+    #读取文件，并把Energy取出做成一个list
+    file = pd.read_csv(addr, skiprows=[0,1])
+    psav = list(file['PSAvalue'])
+    v = list(map(lambda x:x/scal, psav))
+
+    fig = plt.figure(figsize=(16, 12))
+ 
+    num_bins = 256
+    n, bins, patches = plt.hist(v, num_bins, range=(0, num_bins), facecolor='green', alpha=30)
+
+    return fig
+
+#产生谱图的新窗口
+def plot(b, scal):
+    global addrs
+    plot = tkinter.Tk()
+    if b == 'b2':
+        figs = energy_spec(addrs)
+    elif b == 'b3':
+        figs = PSA_spec(addrs,scal)
+    canvas = FigureCanvasTkAgg(figs, master=plot)
+    canvas.show()
+    canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+    plot.mainloop()
+    
+#产生PSA谱的刻度值填写窗口
+def scale_value(b):
+    def start():
+        s = int(en.get())
+        plot(b, s)
+    window = tkinter.Tk()
+    
+    lb = tkinter.Label(window, text='请输入合适的刻度值')
+    lb.grid(row=0, column=0)
+    
+    en = tkinter.Entry(window)
+    en.grid(row=1, column=0)
+    
+    b1 = tkinter.Button(window, text='start', command=start)
+    b1.grid(row=2, column=0)
+    
+    window.mainloop()
+
+if __name__ == "__main__":
+    spec = tkinter.Tk()
+    def xz():
+        global lb1, addrs
+        filename = tkinter.filedialog.askopenfilename()
+        addrs = filename
+        if filename != '':
+            lb1.config(text = filename)
+        else:
+            lb1.config(text = "您没有选择任何文件")
+    
+    lb1 = tkinter.Label(spec, text="请选择一个文件")
+    lb1.grid(row=0, column=0, stick=tkinter.W )
+    
+    b1 = tkinter.Button(spec,text='选择502模式文件',command=xz)
+    b1.grid(row=1, column=0)
+
+    b2 = tkinter.Button(spec,text='start energy_plot',command=lambda:plot(b='b2',scal=1))
+    b2.grid(row=2, column=0)
+    
+    b3 = tkinter.Button(spec,text='start PSA_plot',command=lambda:scale_value(b='b3'))
+    b3.grid(row=3, column=0)
+    
+    spec.mainloop()
